@@ -197,37 +197,65 @@ When a file gets long enough that it's hard to reason about, suggest breaking it
 
 ### Project structure
 
-- Follow **existing layout conventions**: route-level views under `src/pages/`, app-specific components next to (not inside) `src/components/ui/`, theme glue under `src/components/theme/`, shared utilities in `src/lib/`, TypeScript types in `src/types/`. Add new files where similar code already lives; do not introduce parallel roots (e.g. a second `components` tree) without a clear reason.
+- Route-level views in `src/pages/`. Shared utilities, hooks, and WebGL renderers in `src/lib/`. Shared TS types in `src/types/`.
+- App components live under `src/components/`, grouped by role into subfolders. Do not drop new app components flat at the `src/components/` root; pick the matching subfolder (or create one if a new role appears).
+- `src/components/ui/` holds shadcn/ui primitives only. `src/components/theme/` holds theme glue.
+- New file homes:
+  - New noise mode panel? `src/components/panels/`.
+  - New canvas wrapper or viewport behavior? `src/components/canvas/`.
+  - New sidebar section / export-flow UI? `src/components/sidebar/`.
+  - New topbar / statusbar / page-frame piece? `src/components/layout/`.
+  - New low-level control primitive? add to the existing `src/components/controls/index.tsx` (or split it if it keeps growing).
+- Do not introduce a parallel components root (e.g. `src/widgets/`).
 
 Approximate tree (reference; omit `node_modules/`, `dist/`):
 
 ```
 .
-├── public/                 # Vite public assets
+├── public/                       # Vite public assets
 ├── src/
 │   ├── assets/
 │   ├── components/
-│   │   ├── ui/             # shadcn/ui primitives only
-│   │   ├── theme/          # ThemeProvider, ThemeToggle
-│   │   ├── Controls.tsx    # Range / Toggle / Segmented / StopsEditor / ColorRow / Section / Chips
-│   │   ├── FireCloudCanvas.tsx
-│   │   ├── PerlinCanvas.tsx
-│   │   └── GrainCanvas.tsx
+│   │   ├── ui/                   # shadcn/ui primitives only
+│   │   ├── theme/                # ThemeProvider, ThemeToggle
+│   │   ├── canvas/               # CanvasViewport + per-mode WebGL canvas wrappers
+│   │   │   ├── CanvasViewport.tsx
+│   │   │   ├── FireCloudCanvas.tsx
+│   │   │   ├── PerlinCanvas.tsx
+│   │   │   └── GrainCanvas.tsx
+│   │   ├── controls/             # shared low-level controls library
+│   │   │   └── index.tsx         # Range / Toggle / Segmented / StopsEditor / Section / Chips / TextTabs / PalettePicker / ResolutionPicker
+│   │   ├── layout/               # app shell pieces
+│   │   │   ├── TopBar.tsx
+│   │   │   ├── StatusBar.tsx
+│   │   │   └── MobileBlocker.tsx
+│   │   ├── panels/               # per-mode side-panel control groups
+│   │   │   ├── FirePanel.tsx
+│   │   │   ├── PerlinPanel.tsx
+│   │   │   └── GrainPanel.tsx
+│   │   └── sidebar/              # shared sidebar sections + export-flow UI
+│   │       ├── OutputSection.tsx
+│   │       ├── VideoExportSection.tsx
+│   │       ├── ExportButtonBar.tsx
+│   │       └── ExportDialog.tsx
 │   ├── lib/
-│   │   ├── utils.ts        # cn() helper
-│   │   ├── palettes.ts     # shared ColorStop[] presets
-│   │   ├── download.ts     # exportNoise + exportGrainLoop
-│   │   ├── fireCloud.ts    # WebGL renderer (imperative)
-│   │   ├── perlin.ts       # WebGL renderer (imperative)
-│   │   └── grain.ts        # WebGL renderer (imperative)
+│   │   ├── utils.ts              # cn() helper
+│   │   ├── palettes.ts           # shared ColorStop[] presets
+│   │   ├── download.ts           # exportNoise + exportVideo
+│   │   ├── noisePresets.ts       # default + random param factories, TABS, RES_PRESETS
+│   │   ├── usePersistedState.ts  # localStorage-backed useState
+│   │   ├── useIsMobile.ts        # viewport media-query hook
+│   │   ├── fireCloud.ts          # WebGL renderer (imperative)
+│   │   ├── perlin.ts             # WebGL renderer (imperative)
+│   │   └── grain.ts              # WebGL renderer (imperative)
 │   ├── pages/
-│   │   └── NoiseLab.tsx    # the single page
+│   │   └── NoiseLab.tsx          # the single page
 │   ├── types/
 │   │   └── index.ts
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
-├── components.json         # shadcn config (new-york style, slate base)
+├── components.json               # shadcn config (new-york style, slate base)
 ├── index.html
 ├── vite.config.ts
 └── package.json

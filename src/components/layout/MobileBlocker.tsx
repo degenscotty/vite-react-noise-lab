@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import FireCloudCanvas from "@/components/FireCloudCanvas"
+import FireCloudCanvas from "@/components/canvas/FireCloudCanvas"
 import { defaultFire } from "@/lib/noisePresets"
 
 const FIRE = defaultFire()

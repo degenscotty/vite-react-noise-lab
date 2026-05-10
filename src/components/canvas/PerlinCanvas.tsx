@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { PerlinParams } from "@/types";
-import { PerlinRenderer } from "../lib/perlin";
+import { PerlinRenderer } from "@/lib/perlin";
 
 type Props = {
   params: PerlinParams;

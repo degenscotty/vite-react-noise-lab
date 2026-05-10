@@ -15,19 +15,19 @@ import {
   timestamp,
   type VideoQuality,
 } from "@/lib/download"
-import FireCloudCanvas from "@/components/FireCloudCanvas"
-import PerlinCanvas from "@/components/PerlinCanvas"
-import GrainCanvas from "@/components/GrainCanvas"
-import FirePanel from "@/components/FirePanel"
-import PerlinPanel from "@/components/PerlinPanel"
-import GrainPanel from "@/components/GrainPanel"
-import TopBar from "@/components/TopBar"
-import CanvasViewport from "@/components/CanvasViewport"
-import StatusBar from "@/components/StatusBar"
-import ExportDialog from "@/components/ExportDialog"
-import OutputSection from "@/components/OutputSection"
-import VideoExportSection from "@/components/VideoExportSection"
-import ExportButtonBar from "@/components/ExportButtonBar"
+import FireCloudCanvas from "@/components/canvas/FireCloudCanvas"
+import PerlinCanvas from "@/components/canvas/PerlinCanvas"
+import GrainCanvas from "@/components/canvas/GrainCanvas"
+import CanvasViewport from "@/components/canvas/CanvasViewport"
+import FirePanel from "@/components/panels/FirePanel"
+import PerlinPanel from "@/components/panels/PerlinPanel"
+import GrainPanel from "@/components/panels/GrainPanel"
+import TopBar from "@/components/layout/TopBar"
+import StatusBar from "@/components/layout/StatusBar"
+import ExportDialog from "@/components/sidebar/ExportDialog"
+import OutputSection from "@/components/sidebar/OutputSection"
+import VideoExportSection from "@/components/sidebar/VideoExportSection"
+import ExportButtonBar from "@/components/sidebar/ExportButtonBar"
 import {
   defaultFire,
   defaultGrain,

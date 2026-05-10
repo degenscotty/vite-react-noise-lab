@@ -1,5 +1,5 @@
 import NoiseLab from "@/pages/NoiseLab"
-import MobileBlocker from "@/components/MobileBlocker"
+import MobileBlocker from "@/components/layout/MobileBlocker"
 import { useIsMobile } from "@/lib/useIsMobile"
 
 export default function App() {

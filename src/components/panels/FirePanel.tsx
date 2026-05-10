@@ -5,7 +5,7 @@ import {
   Range,
   Section,
   StopsEditor,
-} from "@/components/Controls"
+} from "@/components/controls"
 
 export default function FirePanel({
   value,

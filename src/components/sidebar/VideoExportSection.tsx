@@ -1,4 +1,4 @@
-import { Range, Section, TextTabs } from "@/components/Controls"
+import { Range, Section, TextTabs } from "@/components/controls"
 import { Button } from "@/components/ui/button"
 import { formatBitrate, type VideoQuality } from "@/lib/download"
 

@@ -1,5 +1,5 @@
 import type { Resolution } from "@/types"
-import { ResolutionPicker, Section } from "@/components/Controls"
+import { ResolutionPicker, Section } from "@/components/controls"
 import { Input } from "@/components/ui/input"
 import { RES_PRESETS } from "@/lib/noisePresets"
 

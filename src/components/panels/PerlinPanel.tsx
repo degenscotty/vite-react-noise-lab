@@ -6,7 +6,7 @@ import {
   Section,
   StopsEditor,
   Toggle,
-} from "@/components/Controls"
+} from "@/components/controls"
 
 export default function PerlinPanel({
   value,

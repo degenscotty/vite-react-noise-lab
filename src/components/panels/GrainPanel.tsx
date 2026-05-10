@@ -7,7 +7,7 @@ import {
   StopsEditor,
   TextTabs,
   Toggle,
-} from "@/components/Controls"
+} from "@/components/controls"
 
 const staticWaves: { label: string; value: GrainParams["waveType"] }[] = [
   { label: "Linear", value: "linear" },

@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
-import type { FireParams } from "@/types";
-import { FireCloudRenderer } from "../lib/fireCloud";
+import type { GrainParams } from "@/types";
+import { GrainRenderer } from "@/lib/grain";
 
 type Props = {
-  params: FireParams;
+  params: GrainParams;
   pixelRatio?: number;
 };
 
-export default function FireCloudCanvas({ params, pixelRatio }: Props) {
+export default function GrainCanvas({ params, pixelRatio }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<FireCloudRenderer | null>(null);
+  const rendererRef = useRef<GrainRenderer | null>(null);
   const paramsRef = useRef(params);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef(0);
@@ -21,9 +21,9 @@ export default function FireCloudCanvas({ params, pixelRatio }: Props) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    let renderer: FireCloudRenderer;
+    let renderer: GrainRenderer;
     try {
-      renderer = new FireCloudRenderer(canvas);
+      renderer = new GrainRenderer(canvas);
     } catch (e) {
       console.error(e);
       return;
@@ -38,7 +38,6 @@ export default function FireCloudCanvas({ params, pixelRatio }: Props) {
       const h = Math.max(1, Math.floor(canvas.clientHeight * dpr()));
       renderer.setSize(w, h);
     };
-
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();
