@@ -11,7 +11,6 @@ export default function VideoExportSection({
   quality,
   bitrate,
   exporting,
-  progress,
   onDurationChange,
   onFpsChange,
   onQualityChange,
@@ -22,7 +21,6 @@ export default function VideoExportSection({
   quality: VideoQuality
   bitrate: number
   exporting: boolean
-  progress: { frame: number; total: number } | null
   onDurationChange: (v: number) => void
   onFpsChange: (v: number) => void
   onQualityChange: (v: VideoQuality) => void
@@ -32,9 +30,9 @@ export default function VideoExportSection({
     <Section title="Video export">
       <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">
         Records the animation as it plays. Same motion as the live preview.
-        Saves a{" "}
+        Saves an{" "}
         <code className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-foreground">
-          .webm
+          .mp4
         </code>{" "}
         at the chosen duration, fps, and quality.
       </p>
@@ -91,22 +89,8 @@ export default function VideoExportSection({
         onClick={onExport}
         disabled={exporting}
       >
-        {progress
-          ? `rendering ${progress.frame}/${progress.total}…`
-          : "Export .webm video"}
+        Export .mp4 video
       </Button>
-      {progress && (
-        <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-border">
-          <div
-            className="h-full bg-gradient-to-r from-primary to-primary/70 transition-[width] duration-75"
-            style={{
-              width: `${
-                (progress.frame / Math.max(1, progress.total)) * 100
-              }%`,
-            }}
-          />
-        </div>
-      )}
     </Section>
   )
 }

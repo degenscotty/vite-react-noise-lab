@@ -41,7 +41,7 @@ export default function ExportDialog({
           <DialogDescription>
             Encoding the {kind} animation to{" "}
             <code className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] text-foreground">
-              .webm
+              .mp4
             </code>{" "}
             at {fps} fps. Don't close this tab.
           </DialogDescription>

@@ -119,7 +119,7 @@ export default function NoiseLab() {
         bitrate: loopBitrate,
         onProgress: (frame, total) => setLoopProgress({ frame, total }),
       })
-      const name = `noiselab_${kind}_${res.w}x${res.h}_${loopDuration}s_${loopFps}fps_${timestamp()}.webm`
+      const name = `noiselab_${kind}_${res.w}x${res.h}_${loopDuration}s_${loopFps}fps_${timestamp()}.mp4`
       downloadBlob(blob, name)
     } catch (err) {
       console.error(err)
@@ -227,7 +227,6 @@ export default function NoiseLab() {
               quality={loopQuality}
               bitrate={loopBitrate}
               exporting={exporting}
-              progress={loopProgress}
               onDurationChange={setLoopDuration}
               onFpsChange={setLoopFps}
               onQualityChange={setLoopQuality}

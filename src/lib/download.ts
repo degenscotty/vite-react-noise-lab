@@ -10,6 +10,7 @@ import type {
 import { FireCloudRenderer } from "./fireCloud";
 import { PerlinRenderer } from "./perlin";
 import { GrainRenderer } from "./grain";
+import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 
 export type ExportFormat = "png" | "jpeg";
 
@@ -60,16 +61,14 @@ export async function exportNoise(
 }
 
 /* ============================================================
-   Seamless-loop video export (all three noise kinds)
+   MP4 / H.264 video export (WebCodecs + mp4-muxer)
    ------------------------------------------------------------
    Renders N frames at the requested size+fps using the kind's
-   WebGL renderer with loopPeriod = durationSec. Every shader's
-   time-dependent term is wrapped in drift() / circular paths, so
-   frame 0 and frame N sample identical noise positions and the
-   recorded video loops seamlessly.
+   WebGL renderer, encodes each frame through a hardware-backed
+   VideoEncoder, and muxes the resulting chunks into an MP4 file.
 
-   Output: WebM via MediaRecorder. VP9 preferred, AV1 if available,
-   VP8 / default as fallback.
+   Output: MP4 / H.264. Universally supported (social platforms,
+   iOS, macOS Quick Look, etc).
    ============================================================ */
 
 export type LoopExportOptions = {
@@ -80,27 +79,6 @@ export type LoopExportOptions = {
   bitrate?: number;
   onProgress?: (frame: number, total: number) => void;
 };
-
-function pickWebmMime(): string {
-  // AV1 > VP9 > VP8. AV1 has better quality per bit but slower
-  // encode; if supported in software it's worth the wait at high res.
-  const candidates = [
-    "video/webm;codecs=av01",
-    "video/webm;codecs=vp9",
-    "video/webm;codecs=vp8",
-    "video/webm",
-  ];
-  for (const c of candidates) {
-    if (
-      typeof MediaRecorder !== "undefined" &&
-      MediaRecorder.isTypeSupported &&
-      MediaRecorder.isTypeSupported(c)
-    ) {
-      return c;
-    }
-  }
-  return "video/webm";
-}
 
 /** Heuristic bitrate: bits per pixel-per-second × resolution × fps,
  *  clamped to a sensible range. Scales smoothly with resolution and
@@ -135,6 +113,45 @@ export function formatBitrate(bps: number): string {
   return `${(bps / 1_000_000).toFixed(1)} Mbps`;
 }
 
+/** Find the highest-quality H.264 profile the encoder will accept
+ *  for the given dimensions, fps, and bitrate. Level 5.2 supports
+ *  up to 4K@60, which covers every preset in the app. */
+async function pickH264Codec(
+  width: number,
+  height: number,
+  fps: number,
+  bitrate: number,
+): Promise<string> {
+  // High > Main > Baseline. Hardware encoders almost always support
+  // High; the fallbacks exist for software-only paths on older
+  // browsers.
+  const candidates = [
+    "avc1.640034", // High      L5.2
+    "avc1.4D4034", // Main      L5.2
+    "avc1.420034", // Baseline  L5.2
+    "avc1.640028", // High      L4.0  (1080p30 fallback)
+    "avc1.42E01F", // Baseline  L3.1  (720p fallback)
+  ];
+  for (const codec of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({
+        codec,
+        width,
+        height,
+        bitrate,
+        framerate: fps,
+      });
+      if (support.supported) return codec;
+    } catch {
+      // Some browsers throw on unknown codec strings instead of
+      // returning { supported: false }; just try the next one.
+    }
+  }
+  throw new Error(
+    `No supported H.264 encoder config for ${width}x${height} @ ${fps}fps`,
+  );
+}
+
 export async function exportVideo(
   kind: NoiseKind,
   params: FireParams | PerlinParams | GrainParams,
@@ -142,18 +159,17 @@ export async function exportVideo(
 ): Promise<Blob> {
   const { width, height, durationSec, fps, bitrate, onProgress } = opts;
 
-  if (typeof MediaRecorder === "undefined") {
-    throw new Error("MediaRecorder is not available in this browser");
+  if (typeof VideoEncoder === "undefined") {
+    throw new Error(
+      "WebCodecs (VideoEncoder) is not available in this browser. " +
+        "Use a recent Chrome, Edge, Safari 16.4+, or Firefox 130+.",
+    );
   }
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
 
-  // Build a uniform renderFrame() for the chosen kind. Records the
-  // animation as it would play in the live preview: linear time, no
-  // loop substitution. The video doesn't loop seamlessly, but motion
-  // matches the live preview exactly.
   let renderFrame: (t: number) => void;
   let dispose: () => void;
   if (kind === "fire") {
@@ -176,78 +192,74 @@ export async function exportVideo(
   }
 
   const totalFrames = Math.max(2, Math.round(durationSec * fps));
-  // captureStream(fps) tells the browser to auto-sample the canvas at
-  // the declared rate. The encoded video's duration tracks wall-clock
-  // time between recorder.start() and recorder.stop(), independent of
-  // how fast our render loop runs. This is far more reliable than the
-  // captureStream(0) + requestFrame() + setTimeout() pacing approach,
-  // which produced shorter-than-requested videos when setTimeout drift
-  // accumulated.
-  const stream = (canvas as HTMLCanvasElement).captureStream(fps);
+  const targetBitrate = bitrate ?? adaptiveBitrate(width, height, fps);
+  const codec = await pickH264Codec(width, height, fps, targetBitrate);
 
-  const mimeType = pickWebmMime();
-  const recorder = new MediaRecorder(stream, {
-    mimeType,
-    videoBitsPerSecond: bitrate ?? adaptiveBitrate(width, height, fps),
-  });
-  const chunks: Blob[] = [];
-  // Track both the final `dataavailable` event AND the `stop` event so
-  // we don't return the blob before MediaRecorder has flushed the last
-  // chunk. Some browsers fire `stop` *before* the final `dataavailable`,
-  // so resolving on `stop` alone produced truncated/early downloads.
-  let lastDataAt = 0;
-  recorder.ondataavailable = (e: BlobEvent) => {
-    if (e.data && e.data.size > 0) chunks.push(e.data);
-    lastDataAt = performance.now();
-  };
-  recorder.start(200);
-  const stopped = new Promise<void>((resolve) => {
-    recorder.onstop = () => resolve();
+  const muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: {
+      codec: "avc",
+      width,
+      height,
+    },
+    fastStart: "in-memory",
   });
 
-  // Render one frame "ahead" so the first auto-sample has fresh content
-  renderFrame(0);
+  let encodeError: Error | null = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => {
+      encodeError = e instanceof Error ? e : new Error(String(e));
+    },
+  });
 
-  // Wall-clock-paced render loop: target the elapsed time of frame i,
-  // sleep until that moment, then render. Guarantees total wall-clock
-  // duration of the recording == durationSec, so the encoded video's
-  // duration matches exactly.
-  const startMs = performance.now();
-  const targetEndMs = startMs + durationSec * 1000;
-  for (let i = 1; i < totalFrames; i++) {
-    const targetMs = startMs + (i / totalFrames) * durationSec * 1000;
-    const now = performance.now();
-    const sleepMs = targetMs - now;
-    if (sleepMs > 0) {
-      await new Promise<void>((r) => setTimeout(r, sleepMs));
+  encoder.configure({
+    codec,
+    width,
+    height,
+    bitrate: targetBitrate,
+    framerate: fps,
+  });
+
+  // One keyframe every ~2 seconds. Keeps the stream seekable without
+  // bloating size on long renders.
+  const keyframeInterval = Math.max(1, Math.round(fps * 2));
+  const frameDurationUs = Math.round(1_000_000 / fps);
+
+  try {
+    for (let i = 0; i < totalFrames; i++) {
+      if (encodeError) throw encodeError;
+
+      const t = (i / totalFrames) * durationSec;
+      renderFrame(t);
+
+      const frame = new VideoFrame(canvas, {
+        timestamp: Math.round((i * 1_000_000) / fps),
+        duration: frameDurationUs,
+      });
+      encoder.encode(frame, { keyFrame: i % keyframeInterval === 0 });
+      frame.close();
+
+      // Backpressure: yield to the event loop if the encoder is
+      // falling behind, otherwise we'd queue thousands of frames in
+      // RAM at high fps + high res.
+      if (encoder.encodeQueueSize > 2) {
+        await new Promise<void>((r) => setTimeout(r, 0));
+      }
+
+      onProgress?.(i + 1, totalFrames);
     }
-    const t = (i / totalFrames) * durationSec;
-    renderFrame(t);
-    onProgress?.(i + 1, totalFrames);
-  }
-  // Ensure recording spans the full requested duration even if the
-  // render loop finished slightly early.
-  const remainMs = targetEndMs - performance.now();
-  if (remainMs > 0) {
-    await new Promise<void>((r) => setTimeout(r, remainMs));
-  }
-  // Trailing pad of one frame interval so the last sample is captured
-  await new Promise<void>((r) => setTimeout(r, 1000 / fps));
-  recorder.stop();
-  await stopped;
-  // Drain wait: give MediaRecorder up to 500ms past the last
-  // `dataavailable` to ensure all chunks have arrived. Loops until
-  // a quarter-second of silence has elapsed after the most recent
-  // chunk, then returns. Prevents truncated blobs in browsers that
-  // fire `stop` before the final `dataavailable`.
-  const drainStart = performance.now();
-  while (performance.now() - lastDataAt < 250) {
-    await new Promise<void>((r) => setTimeout(r, 50));
-    if (performance.now() - drainStart > 1000) break; // safety cap
+
+    await encoder.flush();
+    if (encodeError) throw encodeError;
+
+    muxer.finalize();
+  } finally {
+    if (encoder.state !== "closed") encoder.close();
+    dispose();
   }
 
-  dispose();
-  return new Blob(chunks, { type: mimeType });
+  return new Blob([muxer.target.buffer], { type: "video/mp4" });
 }
 
 /** Back-compat alias: grain-only entry point kept so existing callers
