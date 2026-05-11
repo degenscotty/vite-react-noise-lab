@@ -132,6 +132,32 @@ export default function NoiseLab() {
   }, [kind, fire, perlin, grain, res, loopDuration, loopFps, loopBitrate])
 
   const [copied, setCopied] = useState(false)
+  const [copiedSettings, setCopiedSettings] = useState(false)
+
+  const copySettingsToClipboard = useCallback(async () => {
+    const params =
+      kind === "fire" ? fire : kind === "perlin" ? perlin : grain
+    const cleanStops = params.stops.map((s) => ({ pos: s.pos, color: s.color }))
+    const payload = {
+      shader: kind,
+      resolution: { width: res.w, height: res.h },
+      params: { ...params, stops: cleanStops },
+    }
+    const json = JSON.stringify(payload, null, 2)
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(json)
+      } else {
+        throw new Error("Clipboard API not available")
+      }
+      setCopiedSettings(true)
+      setTimeout(() => setCopiedSettings(false), 1500)
+    } catch (err) {
+      console.error(err)
+      alert("Copy settings failed: " + (err as Error).message)
+    }
+  }, [kind, fire, perlin, grain, res])
+
   const copyToClipboard = useCallback(async () => {
     const canvas = document.querySelector<HTMLCanvasElement>(
       "[data-noiselab-canvas] canvas",
@@ -244,9 +270,11 @@ export default function NoiseLab() {
           <ExportButtonBar
             exporting={exporting}
             copied={copied}
+            copiedSettings={copiedSettings}
             onExportPng={() => downloadFile("png")}
             onExportJpeg={() => downloadFile("jpeg")}
             onCopy={copyToClipboard}
+            onCopySettings={copySettingsToClipboard}
             onRandomize={randomize}
             onReset={reset}
           />

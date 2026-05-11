@@ -3,17 +3,21 @@ import { Button } from "@/components/ui/button"
 export default function ExportButtonBar({
   exporting,
   copied,
+  copiedSettings,
   onExportPng,
   onExportJpeg,
   onCopy,
+  onCopySettings,
   onRandomize,
   onReset,
 }: {
   exporting: boolean
   copied: boolean
+  copiedSettings: boolean
   onExportPng: () => void
   onExportJpeg: () => void
   onCopy: () => void
+  onCopySettings: () => void
   onRandomize: () => void
   onReset: () => void
 }) {
@@ -31,18 +35,27 @@ export default function ExportButtonBar({
           Export JPEG
         </Button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={onCopy}
           disabled={exporting}
-          title="Copy the current preview frame to the clipboard"
+          title="Copy the current preview frame as PNG to the clipboard"
         >
           {copied ? "copied!" : "copy"}
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCopySettings}
+          disabled={exporting}
+          title="Copy the current shader settings as JSON to share with another project"
+        >
+          {copiedSettings ? "copied!" : "json"}
+        </Button>
         <Button variant="ghost" size="sm" onClick={onRandomize}>
-          randomise
+          random
         </Button>
         <Button variant="ghost" size="sm" onClick={onReset}>
           reset
