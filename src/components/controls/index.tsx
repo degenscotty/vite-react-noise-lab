@@ -623,7 +623,7 @@ export function StopsEditor({ stops, onChange }: StopsEditorProps) {
     <div className="space-y-2">
       <div
         ref={barRef}
-        className="relative mb-6 h-7 cursor-copy select-none rounded-md border border-border touch-none"
+        className="relative mb-7 h-7 cursor-copy select-none rounded-md border border-border touch-none"
         style={{ background: buildGradientCss(stops) }}
         onPointerDown={onBarPointerDown}
         title="Click to add a stop"
@@ -633,8 +633,8 @@ export function StopsEditor({ stops, onChange }: StopsEditorProps) {
             key={s.id}
             data-stop-pin
             className={cn(
-              "absolute -ml-[7px] mt-[3px] block size-3.5 cursor-ew-resize touch-none",
-              dragId === s.id && "z-10",
+              "absolute flex -translate-x-1/2 origin-top cursor-ew-resize touch-none flex-col items-center transition-transform",
+              dragId === s.id ? "z-10 scale-110" : "z-0",
             )}
             style={{ top: "100%", left: `${(s.pos * 100).toFixed(2)}%` }}
             title={`${s.color} @ ${(s.pos * 100).toFixed(0)}%, drag to move`}
@@ -642,12 +642,15 @@ export function StopsEditor({ stops, onChange }: StopsEditorProps) {
           >
             <span
               data-stop-pin
+              className="block size-0 border-l-[4px] border-r-[4px] border-b-[5px] border-l-transparent border-r-transparent border-b-primary drop-shadow-[0_-1px_1px_rgba(0,0,0,0.45)]"
+            />
+            <span
+              data-stop-pin
               className={cn(
-                "block size-0 border-l-[6px] border-r-[6px] border-t-[7px] border-l-transparent border-r-transparent transition-transform",
-                "drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]",
-                dragId === s.id && "scale-[1.2] drop-shadow-[0_0_4px_var(--primary)]",
+                "block size-3.5 rounded-sm border border-border shadow-[0_1px_2px_rgba(0,0,0,0.35)] transition-[box-shadow,border-color]",
+                dragId === s.id && "border-primary shadow-[0_0_0_2px_var(--primary)]",
               )}
-              style={{ borderTopColor: s.color }}
+              style={{ background: s.color }}
             />
           </span>
         ))}

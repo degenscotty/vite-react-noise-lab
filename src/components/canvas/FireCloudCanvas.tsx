@@ -5,18 +5,24 @@ import { FireCloudRenderer } from "@/lib/fireCloud";
 type Props = {
   params: FireParams;
   pixelRatio?: number;
+  paused?: boolean;
 };
 
-export default function FireCloudCanvas({ params, pixelRatio }: Props) {
+export default function FireCloudCanvas({ params, pixelRatio, paused = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<FireCloudRenderer | null>(null);
   const paramsRef = useRef(params);
   const rafRef = useRef<number | null>(null);
-  const startRef = useRef(0);
+  const elapsedRef = useRef(0);
+  const pausedRef = useRef(paused);
 
   useEffect(() => {
     paramsRef.current = params;
   }, [params]);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,19 +43,14 @@ export default function FireCloudCanvas({ params, pixelRatio }: Props) {
       const w = Math.max(1, Math.floor(canvas.clientWidth * dpr()));
       const h = Math.max(1, Math.floor(canvas.clientHeight * dpr()));
       renderer.setSize(w, h);
+      if (pausedRef.current) {
+        renderer.render(paramsRef.current, elapsedRef.current);
+      }
     };
 
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();
-
-    startRef.current = performance.now();
-    const tick = (now: number) => {
-      const t = (now - startRef.current) / 1000;
-      renderer.render(paramsRef.current, t);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -58,6 +59,37 @@ export default function FireCloudCanvas({ params, pixelRatio }: Props) {
       rendererRef.current = null;
     };
   }, [pixelRatio]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+
+    if (paused) {
+      renderer.render(paramsRef.current, elapsedRef.current);
+      return;
+    }
+
+    let lastMs = performance.now();
+    const tick = (now: number) => {
+      elapsedRef.current += (now - lastMs) / 1000;
+      lastMs = now;
+      renderer.render(paramsRef.current, elapsedRef.current);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [paused, pixelRatio]);
+
+  useEffect(() => {
+    if (!paused) return;
+    rendererRef.current?.render(params, elapsedRef.current);
+  }, [params, paused]);
 
   return <canvas ref={canvasRef} className="block size-full" />;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { Maximize2, Minimize2 } from "lucide-react"
+import { Maximize2, Minimize2, Pause, Play } from "lucide-react"
 import type { NoiseKind } from "@/types"
 import { cn } from "@/lib/utils"
 
@@ -13,11 +13,15 @@ export default function CanvasViewport({
   aspect,
   pixelLabel,
   kind,
+  paused,
+  onTogglePaused,
   children,
 }: {
   aspect: number
   pixelLabel: string
   kind: NoiseKind
+  paused: boolean
+  onTogglePaused: () => void
   children: ReactNode
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -66,21 +70,36 @@ export default function CanvasViewport({
         <div className="pointer-events-none absolute left-2.5 top-2.5 z-10 rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-white/70 backdrop-blur-md bg-black/35">
           {KIND_LABEL[kind]}
         </div>
-        {fullscreenSupported && (
+        <div className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1.5">
           <button
             type="button"
-            onClick={toggleFullscreen}
-            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            title={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
-            className="absolute right-2.5 top-2.5 z-20 rounded p-1.5 text-white/70 backdrop-blur-md bg-black/35 transition-colors hover:bg-black/55 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            onClick={onTogglePaused}
+            aria-label={paused ? "Resume animation" : "Pause animation"}
+            title={paused ? "Resume animation" : "Pause animation"}
+            className="rounded p-1.5 text-white/70 backdrop-blur-md bg-black/35 transition-colors hover:bg-black/55 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
-            {isFullscreen ? (
-              <Minimize2 className="size-3.5" />
+            {paused ? (
+              <Play className="size-3.5" />
             ) : (
-              <Maximize2 className="size-3.5" />
+              <Pause className="size-3.5" />
             )}
           </button>
-        )}
+          {fullscreenSupported && (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
+              className="rounded p-1.5 text-white/70 backdrop-blur-md bg-black/35 transition-colors hover:bg-black/55 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="size-3.5" />
+              ) : (
+                <Maximize2 className="size-3.5" />
+              )}
+            </button>
+          )}
+        </div>
         <div className="pointer-events-none absolute bottom-2.5 right-2.5 z-10 rounded px-2 py-1 font-mono text-[10px] uppercase tracking-wider tabular-nums text-white/70 backdrop-blur-md bg-black/35">
           {pixelLabel} · {aspect.toFixed(2)}:1
         </div>

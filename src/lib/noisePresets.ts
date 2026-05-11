@@ -14,9 +14,14 @@ export const RES_PRESETS: { label: string; w: number; h: number }[] = [
   { label: "Square 2K", w: 2048, h: 2048 },
   { label: "Vertical", w: 1080, h: 1920 },
   { label: "iPhone", w: 1290, h: 2796 },
-  { label: "X banner", w: 1500, h: 500 },
+  { label: "X single image", w: 1200, h: 675 },
+  { label: "X 2-image", w: 700, h: 800 },
+  { label: "X 3-image rest", w: 1200, h: 686 },
+  { label: "X 4-image", w: 1200, h: 600 },
+  { label: "X shared link", w: 1200, h: 628 },
+  { label: "X profile banner", w: 1500, h: 500 },
   { label: "X banner 2×", w: 3000, h: 1000 },
-  { label: "X post", w: 1600, h: 900 },
+  { label: "X post HD", w: 1600, h: 900 },
 ]
 
 export const defaultFire = (): FireParams => ({

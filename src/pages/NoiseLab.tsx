@@ -60,6 +60,7 @@ export default function NoiseLab() {
     h: 1080,
   }))
   const [exporting, setExporting] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [loopDuration, setLoopDuration] = usePersistedState<number>(
     "noiselab:loopDuration",
     () => 6,
@@ -178,10 +179,10 @@ export default function NoiseLab() {
   }, [kind, setFire, setPerlin, setGrain])
 
   const Preview = useMemo(() => {
-    if (kind === "fire") return <FireCloudCanvas params={fire} />
-    if (kind === "perlin") return <PerlinCanvas params={perlin} />
-    return <GrainCanvas params={grain} />
-  }, [kind, fire, perlin, grain])
+    if (kind === "fire") return <FireCloudCanvas params={fire} paused={paused} />
+    if (kind === "perlin") return <PerlinCanvas params={perlin} paused={paused} />
+    return <GrainCanvas params={grain} paused={paused} />
+  }, [kind, fire, perlin, grain, paused])
 
   return (
     <div className="grid h-full grid-rows-[3rem_1fr_2rem]">
@@ -189,7 +190,13 @@ export default function NoiseLab() {
 
       {/* Main area */}
       <div className="grid min-h-0 grid-cols-[1fr_360px]">
-        <CanvasViewport aspect={aspect} pixelLabel={pixelLabel} kind={kind}>
+        <CanvasViewport
+          aspect={aspect}
+          pixelLabel={pixelLabel}
+          kind={kind}
+          paused={paused}
+          onTogglePaused={() => setPaused((p) => !p)}
+        >
           {Preview}
         </CanvasViewport>
 
