@@ -128,6 +128,15 @@ export const PALETTES: Record<string, ColorStop[]> = {
     s("sca-3", 0.82, "#5a2a8a"),
     s("sca-4", 1.0, "#1f3fa8"),
   ],
+  rainbow: [
+    s("rai-0", 0.0, "#ff0040"),
+    s("rai-1", 0.17, "#ff8a00"),
+    s("rai-2", 0.34, "#ffe600"),
+    s("rai-3", 0.5, "#33cc33"),
+    s("rai-4", 0.67, "#1e90ff"),
+    s("rai-5", 0.84, "#5a2ad9"),
+    s("rai-6", 1.0, "#c724b1"),
+  ],
   monochrome: [
     s("mon-0", 0.0, "#000000"),
     s("mon-1", 1.0, "#ffffff"),
